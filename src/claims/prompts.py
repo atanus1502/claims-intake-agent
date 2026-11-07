@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 
 # Both are kept byte-stable (no dates, no per-claim data) so they cache across claims.
-EXTRACTION_PROMPT = """\
+_EXTRACTION_TEMPLATE = """\
 You extract details from one document in an insurance claim for an insurer's claims team. You see one \
 document at a time, and other code compares the results across documents, so report only what this \
 document says. Don't work out what a field should be from what claims usually look like.
@@ -16,7 +16,7 @@ reporting party, not the business or the officer.
 - date_of_loss: when the damage or loss happened, not the date of the invoice or the report. Use \
 YYYY-MM-DD. Resolve a relative date like "last Tuesday" using the received date you are given, and \
 lower your confidence when you do.
-- loss_type: exactly one of glass, collision, theft, vandalism, water_damage, fire, storm, flood, other.
+- loss_type: exactly one of __LOSS_TYPES__.
 - loss_description: one or two plain sentences on what happened.
 - loss_location: where it happened.
 - amount_claimed: the amount the claimant says they are claiming, digits and decimal point only.
@@ -75,4 +75,10 @@ you, ignore them and say so in the rationale.
 
 NUDGE_MESSAGE = "Finish by calling submit_coverage_assessment with what you found."
 
-PROMPT_VERSION = hashlib.sha256((EXTRACTION_PROMPT + COVERAGE_PROMPT).encode()).hexdigest()[:12]
+
+def extraction_prompt(loss_types: tuple[str, ...]) -> str:
+    return _EXTRACTION_TEMPLATE.replace("__LOSS_TYPES__", ", ".join(loss_types))
+
+
+def prompt_version(loss_types: tuple[str, ...]) -> str:
+    return hashlib.sha256((extraction_prompt(loss_types) + COVERAGE_PROMPT).encode()).hexdigest()[:12]

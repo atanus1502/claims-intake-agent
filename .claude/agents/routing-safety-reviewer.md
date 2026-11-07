@@ -1,6 +1,6 @@
 ---
 name: routing-safety-reviewer
-description: Reviews changes to routing, coverage, escalation, consolidation, prompts or the graph for any new way a claim could be wrongly fast-tracked. Use before finishing a change to those files.
+description: Reviews changes to the rules file, routing, coverage, escalation, consolidation, prompts or the graph for any new way a claim could be wrongly fast-tracked. Use before finishing a change to those files.
 tools: Read, Grep, Glob, Bash
 ---
 
@@ -14,7 +14,7 @@ Check each of these, and trace the code rather than trusting comments:
 1. **Route authority:** can any model output, tool result or document content set the route without passing through
    `routing.decide`?
 2. **Failure paths:** does every error, refusal, timeout, turn limit or missing value still end at a person?
-3. **Rules:** was a check removed, loosened or skipped? Do missing fields and values at the threshold behave safely?
+3. **Rules:** was a check removed, loosened or skipped, in code or in `config/rules.yaml`? Do missing fields and values at the threshold behave safely?
 4. **Second readings:** can an Opus reading or a redone coverage check clear a warning, concern, exclusion or disagreement?
 5. **Untrusted input:** can text in an email or attachment change instructions, tools or routing? Can the email body
    count as an invoice or police report?

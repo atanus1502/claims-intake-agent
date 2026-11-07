@@ -9,15 +9,23 @@ import pytest
 
 from claims.audit import AuditLog
 from claims.claims_system import APPROVED, FAST_TRACK, RECEIVED as RECEIVED_STATUS, ClaimsSystem
-from claims.consolidation import consolidate
+from claims.consolidation import consolidate as consolidate_with
 from claims.coverage import verify_coverage
-from claims.escalation import merge_readings, second_reading_reason
+from claims.escalation import merge_readings as merge_with, second_reading_reason
 from claims.policies import PolicyStore
 from claims.redaction import redact
 from claims.routing import decide
-from tests.conftest import RECEIVED, email_extraction, field, invoice_extraction
+from tests.conftest import RECEIVED, RULES, email_extraction, field, invoice_extraction
 
 SENDER = "maya.thornton@example.com"
+
+
+def merge_readings(first, second):
+    return merge_with(first, second, RULES)
+
+
+def consolidate(extractions):
+    return consolidate_with(extractions, RULES)
 
 
 def merged(email=None, invoice=None, extra=()):
@@ -37,10 +45,10 @@ def store(settings):
     return PolicyStore(settings.policy_file)
 
 
-def route_codes(settings, store, claim=None, coverage_assessment="default", sender=SENDER, intake=()):
+def route_codes(settings, store, claim=None, coverage_assessment="default", sender=SENDER, intake=(), rules=RULES):
     claim = claim or merged()
-    coverage = verify_coverage(assessment() if coverage_assessment == "default" else coverage_assessment, claim, sender, store, settings)
-    decision = decide(claim, coverage, list(intake), RECEIVED, settings)
+    coverage = verify_coverage(assessment() if coverage_assessment == "default" else coverage_assessment, claim, sender, store, rules)
+    decision = decide(claim, coverage, list(intake), RECEIVED, rules)
     return decision["route"], {r["code"] for r in decision["reasons"]}
 
 
@@ -119,7 +127,7 @@ def test_unsure_claimed_amount_with_no_invoice_goes_to_a_person(settings, store)
 
 
 def test_threshold_is_inclusive(settings, store):
-    email = with_field("loss_description", "A rock cracked it.", settings.confidence_threshold)
+    email = with_field("loss_description", "A rock cracked it.", RULES.confidence_threshold)
     assert route_codes(settings, store, merged(email=email))[0] == "fast_track"
 
 
@@ -257,11 +265,11 @@ def test_new_policy_and_many_prior_claims(settings, store):
     claim = merged(email=_as("AUT-100955", "Samir Haddad"), invoice=_invoice("Samir Haddad"))
     assert "new_policy" in route_codes(settings, store, claim, assessment(policy_number="AUT-100955"), sender="samir.haddad@example.org")[1]
 
-    strict = replace(settings, max_prior_claims=0)
+    strict = replace(RULES, lines={**RULES.lines, "property": replace(RULES.lines["property"], max_prior_claims=0)})
     email = _as("PRP-200871", "Daniel Okafor")
     email["fields"] = [f for f in email["fields"] if f["name"] != "loss_type"] + [field("loss_type", "water_damage")]
     claim = merged(email=email, invoice=_invoice("Daniel Okafor"))
-    assert "many_prior_claims" in route_codes(strict, store, claim, assessment(policy_number="PRP-200871"), sender="d.okafor@example.net")[1]
+    assert "many_prior_claims" in route_codes(settings, store, claim, assessment(policy_number="PRP-200871"), sender="d.okafor@example.net", rules=strict)[1]
 
 
 def test_policy_tools_cant_reveal_contact_email_or_write(store):
@@ -326,9 +334,9 @@ def test_redaction_keeps_what_the_claim_needs():
 
 
 def test_low_confidence_on_a_field_routing_ignores_doesnt_trigger_a_reread():
-    assert second_reading_reason(with_field("amount_claimed", "412.30", 0.5), 0.85) is None
-    assert "policy_number" in second_reading_reason(with_field("policy_number", "AUT-100234", 0.5), 0.85)
-    assert second_reading_reason(invoice_extraction(readable=False), 0.85) == "marked unreadable"
+    assert second_reading_reason(with_field("amount_claimed", "412.30", 0.5), RULES) is None
+    assert "policy_number" in second_reading_reason(with_field("policy_number", "AUT-100234", 0.5), RULES)
+    assert second_reading_reason(invoice_extraction(readable=False), RULES) == "marked unreadable"
 
 
 def test_merge_keeps_warnings_and_fields_from_the_first_reading():
@@ -354,8 +362,8 @@ def test_merge_treats_equal_values_as_agreeing_but_flags_real_disagreement():
 def test_routing_fields_must_clear_the_threshold(settings, store, name, value):
     route, codes = route_codes(settings, store, merged(email=with_field(name, value, 0.5)))
     assert route == "human_review" and "low_confidence" in codes
-    assert route_codes(settings, store, merged(email=with_field(name, value, settings.confidence_threshold))) == ("fast_track", set())
-    assert name in second_reading_reason(with_field(name, value, 0.5), settings.confidence_threshold)
+    assert route_codes(settings, store, merged(email=with_field(name, value, RULES.confidence_threshold))) == ("fast_track", set())
+    assert name in second_reading_reason(with_field(name, value, 0.5), RULES)
 
 
 def test_unsure_no_injury_on_a_collision_goes_to_a_person(settings, store):
@@ -397,7 +405,7 @@ def test_unsure_invoice_date_blocks_fast_track(settings, store):
     invoice = invoice_extraction(fields=[field("claimant_name", "Maya Thornton"), field("invoice_total", "412.30"), field("invoice_date", "2026-10-29", 0.5)])
     route, codes = route_codes(settings, store, merged(invoice=invoice))
     assert route == "human_review" and "low_confidence" in codes
-    assert "invoice_date" in second_reading_reason(invoice, settings.confidence_threshold)
+    assert "invoice_date" in second_reading_reason(invoice, RULES)
 
 
 def test_claimed_amount_over_the_limit_goes_to_a_person_even_within_tolerance(settings, store):

@@ -30,8 +30,9 @@ from claims.escalation import coverage_model_for, merge_readings, second_reading
 from claims.llm import SUBMIT_TOOL, ModelFailure
 from claims.models import CoverageAssessment, DocumentExtraction
 from claims.policies import PolicyStore
-from claims.prompts import NUDGE_MESSAGE, PROMPT_VERSION
+from claims.prompts import NUDGE_MESSAGE, prompt_version
 from claims.routing import FAST_TRACK, HUMAN_REVIEW, decide
+from claims.rules import RuleSet
 
 
 class LLM(Protocol):
@@ -66,6 +67,7 @@ class Deps:
     llm: LLM
     claims: ClaimsSystem
     policies: PolicyStore
+    rules: RuleSet
     audit: AuditLog
 
 
@@ -83,6 +85,7 @@ _ACKNOWLEDGEMENTS = {
 
 def build_graph(deps: Deps, checkpointer: Any = None) -> Any:
     audit = deps.audit
+    current_prompt_version = prompt_version(deps.rules.recognized_loss_types)
 
     def intake(state: ClaimState) -> dict[str, Any]:
         claim_id = state["claim_id"]
@@ -120,25 +123,25 @@ def build_graph(deps: Deps, checkpointer: Any = None) -> Any:
             usage.append(call_usage)
             audit.write(
                 claim_id, "document_extracted", doc_id=doc_id, sha256=sha256, requested_model=model,
-                prompt_version=PROMPT_VERSION, usage=call_usage, result=reading,
+                prompt_version=current_prompt_version, usage=call_usage, result=reading,
             )
             return reading, None
 
         reading, error = read(settings.model)
-        why = "the first reading failed" if reading is None else second_reading_reason(reading, settings.confidence_threshold)
+        why = "the first reading failed" if reading is None else second_reading_reason(reading, deps.rules)
         reread = False
         if why and settings.complex_model != settings.model:
             audit.write(claim_id, "document_reread", doc_id=doc_id, reason=why, model=settings.complex_model)
             second, second_error = read(settings.complex_model)
             if second is not None:
-                reading, reread = (merge_readings(reading, second) if reading else second), True
+                reading, reread = (merge_readings(reading, second, deps.rules) if reading else second), True
             error = error or second_error
         if reading is None:
             return {"extractions": [{"doc_id": doc_id, "error": error}], "usage": usage}
         return {"extractions": [{"doc_id": doc_id, "result": reading, "reread": reread}], "usage": usage}
 
     def consolidate_node(state: ClaimState) -> dict[str, Any]:
-        claim = consolidate(state["extractions"])
+        claim = consolidate(state["extractions"], deps.rules)
         deps.claims.save_details(state["claim_id"], {"claim": claim})
         audit.write(state["claim_id"], "consolidated", claim=claim)
         coverage_model = coverage_model_for(
@@ -146,6 +149,7 @@ def build_graph(deps: Deps, checkpointer: Any = None) -> Any:
             any_reread=any(e.get("reread") for e in state["extractions"]),
             already_flagged=bool(claim["issues"] or state.get("intake_issues")),
             settings=deps.settings,
+            rules=deps.rules,
         )
         details = {name: {k: f[k] for k in ("value", "confidence")} for name, f in claim["fields"].items()}
         opening = (
@@ -199,9 +203,10 @@ def build_graph(deps: Deps, checkpointer: Any = None) -> Any:
         complex_model = deps.settings.complex_model
         if (
             assessment is not None
+            and deps.rules.redo_unsure_coverage
             and state["coverage_model"] != complex_model
             and not assessment["exclusion_applies"]  # a person will see this anyway, and a second opinion mustn't clear it
-            and assessment["confidence"] < deps.settings.confidence_threshold
+            and assessment["confidence"] < deps.rules.confidence_threshold
         ):
             audit.write(state["claim_id"], "coverage_escalated", model=complex_model, first_assessment=assessment)
             return {
@@ -221,16 +226,16 @@ def build_graph(deps: Deps, checkpointer: Any = None) -> Any:
 
     def verify_coverage_node(state: ClaimState) -> dict[str, Any]:
         assessment = state.get("assessment")
-        coverage = verify_coverage(assessment, state["claim"], state["sender"], deps.policies, deps.settings)
+        coverage = verify_coverage(assessment, state["claim"], state["sender"], deps.policies, deps.rules)
         audit.write(
-            state["claim_id"], "coverage_verified", prompt_version=PROMPT_VERSION,
+            state["claim_id"], "coverage_verified", prompt_version=current_prompt_version,
             model=state["coverage_model"], assessment=assessment, coverage=coverage,
         )
         return {"coverage": coverage}
 
     def route(state: ClaimState) -> dict[str, Any]:
         claim_id = state["claim_id"]
-        decision = decide(state["claim"], state["coverage"], state.get("intake_issues", []), state["received_at"], deps.settings)
+        decision = decide(state["claim"], state["coverage"], state.get("intake_issues", []), state["received_at"], deps.rules)
         deps.claims.save_details(claim_id, {"claim": state["claim"], "coverage": state["coverage"], "decision": decision})
         audit.write(claim_id, "routed", **decision)
         deps.claims.set_status(claim_id, status.FAST_TRACK if decision["route"] == FAST_TRACK else status.PENDING_REVIEW)

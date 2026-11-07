@@ -1,0 +1,72 @@
+# Fast-track rules. A claim is fast-tracked only when none of these send it to a person.
+#
+# Changing this file changes how real claims are decided, so:
+#   1. Bump `version`, which is recorded in the audit log with every decision.
+#   2. Run `claims rules` to validate the file. A file with a mistake stops processing instead of being guessed at.
+#   3. Have the change reviewed, and run the tests and eval before it goes live.
+#
+# Safety rules, such as sending failed calls and injection flags to a person, are in code on purpose. See the README.
+#
+# The values below are placeholders for your claims team to set. They haven't been validated on real claims.
+
+version: rules-v6
+
+# These apply to every claim, because they're used before the claim's policy is known.
+confidence_threshold: 0.85   # a checked field below this goes to a person
+amount_tolerance: 0.01       # a claimed amount within 1% of the invoice isn't a conflict, because claimants round
+confidence_checked:          # fields that must clear the threshold when present; the amount is checked separately
+  - claimant_name
+  - date_of_loss
+  - loss_type
+  - loss_description
+  - policy_number
+  - police_report_number
+  - injury_reported
+  - third_party_involved
+  - invoice_date
+
+recognized_loss_types:       # Claude must pick one of these, so changing the list changes its prompt: run the eval
+  - glass
+  - collision
+  - theft
+  - vandalism
+  - water_damage
+  - fire
+  - storm
+  - flood
+  - other                    # required, so that an unfamiliar loss always has somewhere to go
+
+opus:                        # when the stronger model steps in; these affect cost and how closely a claim is checked
+  complex_amount: 2000             # claims at or above this get Opus for the coverage check
+  coverage_after_reread: true      # a claim with a re-read document gets Opus for the coverage check
+  redo_unsure_coverage: true       # Opus redoes an unsure coverage check that found no exclusion
+
+# These apply to every line of business, unless the line overrides them below.
+defaults:
+  fast_track_limit: 5000     # the largest invoice or claimed amount that can be fast-tracked
+  late_report_days: 60       # losses reported later than this go to a person
+  new_policy_days: 30        # losses this soon after the policy started go to a person
+  max_prior_claims: 2        # more than this within the window below goes to a person
+  prior_claims_window_days: 365
+  active_policy_statuses: [active]   # any other status goes to a person
+  # Removing either of these lets a claim with an injury or another party be fast-tracked. Get sign-off before you do.
+  review_if_reported: [injury_reported, third_party_involved]
+  required_fields:
+    - claimant_name
+    - date_of_loss
+    - loss_type
+    - loss_description
+  loss_types:                # extra evidence by loss type: police_report, no_injury_statement
+    theft: {requires: [police_report]}
+    vandalism: {requires: [police_report]}
+    collision: {requires: [no_injury_statement]}
+
+# Every line of business the agent may fast-track. A policy on any other line goes to a person.
+# A line can override any of the defaults, for example:
+#   property:
+#     fast_track_limit: 2000
+#     loss_types:
+#       water_damage: {requires: [police_report]}
+lines:
+  auto: {}
+  property: {}

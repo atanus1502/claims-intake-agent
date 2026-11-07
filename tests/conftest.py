@@ -10,10 +10,12 @@ import pytest
 from claims.config import Settings
 from claims.llm import ModelFailure
 from claims.models import DocumentExtraction
+from claims.rules import load_rules
 
 ROOT = Path(__file__).resolve().parent.parent
 PDF_BYTES = b"%PDF-1.7 synthetic"
 RECEIVED = "2026-11-02T10:00:00+00:00"
+RULES = load_rules(ROOT / "config" / "rules.yaml")
 
 
 def field(name: str, value: str, confidence: float = 0.97) -> dict[str, Any]:
@@ -114,7 +116,7 @@ def make_email(
 
 @pytest.fixture
 def settings(tmp_path: Path) -> Settings:
-    return replace(Settings(), data_dir=tmp_path / "data", policy_file=ROOT / "config" / "mock_policies.yaml")
+    return replace(Settings(), data_dir=tmp_path / "data", policy_file=ROOT / "config" / "mock_policies.yaml", rules_file=ROOT / "config" / "rules.yaml")
 
 
 __all__ = ["ModelFailure"]

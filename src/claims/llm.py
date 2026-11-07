@@ -10,7 +10,8 @@ from claims.config import Settings
 from claims.documents import content_block
 from claims.models import CoverageAssessment, DocumentExtraction
 from claims.policies import READ_TOOLS
-from claims.prompts import COVERAGE_PROMPT, EXTRACTION_PROMPT
+from claims.prompts import COVERAGE_PROMPT, extraction_prompt
+from claims.rules import load_rules
 
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
 MAX_TOKENS = 16000
@@ -75,6 +76,7 @@ class ClaudeLLM:
     def __init__(self, settings: Settings, client: anthropic.Anthropic | None = None):
         self.settings = settings
         self.client = client or anthropic.Anthropic()
+        self.extraction_system = extraction_prompt(load_rules(settings.rules_file).recognized_loss_types)
 
     def _common(self, system: str, model: str) -> dict[str, Any]:
         return {
@@ -94,7 +96,7 @@ class ClaudeLLM:
         messages = [{"role": "user", "content": [content_block(document), {"type": "text", "text": text}]}]
         try:
             response = self.client.beta.messages.parse(
-                **self._common(EXTRACTION_PROMPT, model), output_format=DocumentExtraction, messages=messages
+                **self._common(self.extraction_system, model), output_format=DocumentExtraction, messages=messages
             )
         except (anthropic.APIError, pydantic.ValidationError, ValueError) as exc:
             raise ModelFailure(f"{type(exc).__name__}: {exc}") from exc

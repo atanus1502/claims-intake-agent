@@ -9,13 +9,15 @@ person. It runs on mock systems and synthetic claims. See [README.md](README.md)
 pip install -e ".[dev]"            # set up, in a virtualenv at .venv
 pytest                             # offline tests, no API key and no cost
 python scripts/generate_cases.py   # rebuild evals/cases after changing a case
+claims rules                       # validate config/rules.yaml
 claims-eval --limit 3              # live eval: calls Claude and costs money, so ask first
 ```
 
 ## Where things are
 
 - `src/claims/graph.py`: the LangGraph workflow. Start here.
-- `src/claims/routing.py`, `coverage.py`, `consolidation.py`: the rules, with no model involved.
+- `config/rules.yaml`, `src/claims/rules.py`: the rule values, and the code that loads and checks them.
+- `src/claims/routing.py`, `coverage.py`, `consolidation.py`: the checks, with no model involved.
 - `src/claims/escalation.py`: when Opus takes over from Sonnet.
 - `src/claims/llm.py`, `prompts.py`: every call to Claude, and the prompts.
 - `src/claims/claims_system.py`, `policies.py`: mock systems, to be replaced with real ones.
@@ -37,7 +39,8 @@ These protect claimants and the insurer. Don't weaken one without the user's exp
 
 ## When changing things
 
-- **Routing rules:** bump `RULES_VERSION` in `routing.py`, and add a test for what must still go to a person. Use the
+- **Routing rules:** rule values are in `config/rules.yaml`, and new kinds of check go in code. Keep the rules under "Rules to
+  keep" in code, not in the file. Either way, bump `version` in that file, and add a test for what must still go to a person. Use the
   `routing-safety-reviewer` agent before finishing.
 - **Widening the eval set:** the `adversarial-case-writer` agent adds claims designed to get wrongly fast-tracked. Its
   `ADV-` cases are meant to expose gaps, so a failure is a finding to report rather than something to tune away.

@@ -97,7 +97,7 @@ def _dates_to_text(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [{k: str(v) if isinstance(v, date) else v for k, v in row.items()} for row in rows]
 
 
-def prior_claims_within(policy: dict[str, Any], loss_date: date, days: int = 365) -> int:
+def prior_claims_within(policy: dict[str, Any], loss_date: date, days: int) -> int:
     cutoff = loss_date - timedelta(days=days)
     return sum(1 for row in policy.get("prior_claims", []) if cutoff <= _to_date(row["date"]) <= loss_date)
 

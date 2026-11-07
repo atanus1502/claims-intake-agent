@@ -122,7 +122,7 @@ def main() -> int:
     parser.add_argument("--workers", type=int, default=4)
     args = parser.parse_args()
 
-    settings = replace(Settings.from_env(), policy_file=PROJECT_ROOT / "config" / "mock_policies.yaml")
+    settings = replace(Settings.from_env(), policy_file=PROJECT_ROOT / "config" / "mock_policies.yaml", rules_file=PROJECT_ROOT / "config" / "rules.yaml")
     case_dirs = sorted(p for p in CASES_DIR.iterdir() if (p / "expected.json").exists())
     if args.case:
         case_dirs = [p for p in case_dirs if p.name in args.case]

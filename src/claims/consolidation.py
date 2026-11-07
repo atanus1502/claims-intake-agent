@@ -3,15 +3,16 @@ from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal, InvalidOperation
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from claims.models import reason
 from claims.policies import normalise_name
 
-LOSS_TYPES = {"glass", "collision", "theft", "vandalism", "water_damage", "fire", "storm", "flood", "other"}
+if TYPE_CHECKING:
+    from claims.rules import RuleSet
+
 FREE_TEXT = {"loss_description", "loss_location"}
 FLAGS = {"injury_reported", "third_party_involved"}
-AMOUNT_TOLERANCE = Decimal("0.01")  # claimants round; "about $450" against a $447.50 invoice isn't a conflict
 
 
 def parse_amount(value: str) -> Decimal | None:
@@ -22,7 +23,7 @@ def parse_amount(value: str) -> Decimal | None:
     return amount if amount.is_finite() and amount >= 0 else None
 
 
-def normalise_field(name: str, value: str) -> tuple[Any, str] | None:
+def normalise_field(name: str, value: str, rules: RuleSet) -> tuple[Any, str] | None:
     """The form to compare by and the form to store, or None if the value isn't valid for this field."""
     value = value.strip()
     if not value:
@@ -37,7 +38,7 @@ def normalise_field(name: str, value: str) -> tuple[Any, str] | None:
         return (amount, str(amount)) if amount is not None else None
     if name == "loss_type":
         loss_type = value.casefold()
-        return (loss_type, loss_type) if loss_type in LOSS_TYPES else None
+        return (loss_type, loss_type) if loss_type in rules.recognized_loss_types else None
     if name in FLAGS:
         flag = value.casefold()
         return (flag, flag) if flag in ("true", "false") else None
@@ -49,7 +50,7 @@ def normalise_field(name: str, value: str) -> tuple[Any, str] | None:
     return value, value
 
 
-def consolidate(extractions: list[dict[str, Any]]) -> dict[str, Any]:
+def consolidate(extractions: list[dict[str, Any]], rules: RuleSet) -> dict[str, Any]:
     issues: list[dict[str, str]] = []
     grouped: dict[str, list[dict[str, Any]]] = {}
     doc_types: set[str] = set()
@@ -73,7 +74,7 @@ def consolidate(extractions: list[dict[str, Any]]) -> dict[str, Any]:
         for field in result["fields"]:
             if field["name"] == "invoice_date" and doc_type != "invoice":
                 continue  # the claimant's own account can't supply the date that the invoice check relies on
-            normalised = normalise_field(field["name"], field["value"])
+            normalised = normalise_field(field["name"], field["value"], rules)
             if normalised is None:
                 issues.append(reason("invalid_value", f"{doc_id}: {field['name']} has an unusable value."))
                 continue
@@ -104,7 +105,7 @@ def consolidate(extractions: list[dict[str, Any]]) -> dict[str, Any]:
     if "invoice_total" in fields and "amount_claimed" in fields:
         invoice = Decimal(fields["invoice_total"]["value"])
         claimed = Decimal(fields["amount_claimed"]["value"])
-        if abs(invoice - claimed) > invoice * AMOUNT_TOLERANCE:
+        if abs(invoice - claimed) > invoice * rules.amount_tolerance:
             issues.append(reason("amount_conflict", f"Claimed {claimed} but the invoice total is {invoice}."))
 
     return {

@@ -10,6 +10,7 @@ from pathlib import Path
 from claims.claims_system import PENDING_REVIEW
 from claims.config import Settings
 from claims.graph import REVIEW_OUTCOMES
+from claims.rules import RulesError, load_rules
 from claims.service import DISABLED, PROCESSED, AWAITING_REVIEW, ClaimsAgent
 
 log = logging.getLogger("claims")
@@ -77,6 +78,16 @@ def _audit(agent: ClaimsAgent, args: argparse.Namespace) -> int:
     return 0
 
 
+def _rules(agent: ClaimsAgent, args: argparse.Namespace) -> int:
+    rules = load_rules(agent.settings.rules_file)
+    print(f"{agent.settings.rules_file} is valid: {rules.version} ({rules.digest})")
+    print(f"Confidence threshold {rules.confidence_threshold}, amount tolerance {rules.amount_tolerance}")
+    for name, line in rules.lines.items():
+        print(f"{name}: fast-track limit {line.fast_track_limit}, late report {line.late_report_days} days, "
+              f"new policy {line.new_policy_days} days, max prior claims {line.max_prior_claims}")
+    return 0
+
+
 def _graph(agent: ClaimsAgent, args: argparse.Namespace) -> int:
     print(agent.graph.get_graph().draw_mermaid())
     return 0
@@ -114,6 +125,8 @@ def main() -> int:
     audit_actions.add_parser("show").add_argument("claim_id")
     audit.set_defaults(handler=_audit)
 
+    commands.add_parser("rules", help="check the rules file and show what it sets").set_defaults(handler=_rules)
+
     commands.add_parser("graph", help="print the workflow as a Mermaid diagram").set_defaults(handler=_graph)
 
     args = parser.parse_args()
@@ -122,6 +135,9 @@ def main() -> int:
         return args.handler(agent, args)
     except KeyboardInterrupt:
         return 0
+    except RulesError as exc:
+        print(f"Rules file problem, so nothing was processed: {exc}", file=sys.stderr)
+        return 1
     finally:
         agent.close()
 

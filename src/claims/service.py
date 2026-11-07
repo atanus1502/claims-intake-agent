@@ -16,6 +16,7 @@ from claims.documents import claim_id_for, parse_email
 from claims.graph import REVIEW_OUTCOMES, Deps, build_graph
 from claims.llm import ClaudeLLM
 from claims.policies import PolicyStore
+from claims.rules import load_rules
 
 PROCESSED = "processed"
 AWAITING_REVIEW = "awaiting_review"
@@ -44,6 +45,7 @@ class ClaimsAgent:
                 llm=self._llm or ClaudeLLM(self.settings),
                 claims=self.claims,
                 policies=PolicyStore(self.settings.policy_file),
+                rules=load_rules(self.settings.rules_file),
                 audit=self.audit,
             )
             self._graph = build_graph(deps, self._checkpoints)

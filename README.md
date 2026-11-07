@@ -82,7 +82,7 @@ the 22 test claims, a claim took about 12 seconds and $0.035 in API usage. Real 
 
 - **A full record of every claim:** document fingerprints, model readings, policy lookups, rule outcomes and reviewer decisions are all logged.
 - **Tampering is detectable:** `claims audit verify` shows whether the log has been edited or had records removed.
-- **Decisions you can explain:** routing comes from plain rules in code, so each outcome traces to named reasons and a rules version.
+- **Decisions you can explain:** routing comes from plain rules, not a model, so each outcome traces to named reasons and a rules version.
 - **Safe failure:** a failed or refused model call sends the claim to a person, never to fast-track.
 - **Resistance to manipulation:** nothing written in a document can approve a claim, and read-only tools mean Claude can't change a policy.
 
@@ -105,13 +105,14 @@ claims audit show CLM-XXXXXXXXXXXX               # everything that happened to a
 claims audit verify                              # check the log hasn't been altered
 ```
 
-Review decisions are `approve`, `deny` and `request_info`. Settings are in [.env.example](.env.example). To stop all
+Review decisions are `approve`, `deny` and `request_info`. Settings are in [.env.example](.env.example), and the fast-track rules are in [config/rules.yaml](config/rules.yaml). To stop all
 new processing, create the file `data/CLAIMS_DISABLED`.
 
 ## When a claim goes to a person
 
-A claim is fast-tracked only when none of these apply. The rules are in [routing.py](src/claims/routing.py) and
-[coverage.py](src/claims/coverage.py).
+A claim is fast-tracked only when none of these apply. The values are in [config/rules.yaml](config/rules.yaml), and the checks
+are in [routing.py](src/claims/routing.py) and [coverage.py](src/claims/coverage.py). Some of these checks can be bypassed
+today, as listed under [Known limits](#known-limits).
 
 | Area | Sent to a person when |
 |---|---|
@@ -124,6 +125,66 @@ A claim is fast-tracked only when none of these apply. The rules are in [routing
 | **Amount** | The invoice or the claimed amount is over the fast-track limit (default $5,000), or the amount is over the coverage limit or not above the deductible |
 | **Risk** | Injury or another party is involved, a collision claim doesn't rule both out, the report is late, the policy is new, or there are many recent claims |
 | **Failure** | A Claude call fails or is refused, or the coverage check doesn't finish |
+
+## Changing the rules
+
+Limits, required fields and the evidence each loss type needs are in [config/rules.yaml](config/rules.yaml), so most rule
+changes need no code. Each line of business can override the defaults:
+
+```yaml
+lines:
+  auto: {}
+  property:
+    fast_track_limit: 2000
+    loss_types:
+      water_damage: {requires: [police_report]}
+```
+
+| Change | Where |
+|---|---|
+| Limits, time windows, the confidence threshold and the amount tolerance | `config/rules.yaml` |
+| Required fields, and the evidence a loss type needs | `config/rules.yaml` |
+| Different rules for a line of business | `config/rules.yaml` |
+| Which policy statuses count as active, and the window for counting prior claims | `config/rules.yaml` |
+| Whether an injury or another party always goes to a person | `config/rules.yaml` |
+| The list of loss types, which also changes Claude's prompt, so run the eval | `config/rules.yaml` |
+| When Opus steps in | `config/rules.yaml` |
+| A new kind of check, such as comparing two dates | Code, in [routing.py](src/claims/routing.py) or [coverage.py](src/claims/coverage.py) |
+
+The confidence threshold, amount tolerance, loss types and Opus settings apply to every line, because they're used before the
+claim's policy is known.
+
+To change a rule:
+
+1. Edit the file and bump `version`.
+2. Run `claims rules` to validate it.
+3. Run the tests and the eval, and have the change reviewed before it goes live.
+
+A mistyped setting name, a missing setting or many out-of-range values stop processing. This doesn't catch every mistake:
+some valid-looking values can silently weaken a rule, as listed under [Known limits](#known-limits), so review every change to
+the file. A policy on a named line the file doesn't list goes to a person. Every decision records the rules version and a
+fingerprint of the file in the audit log, so you can tell which rules applied even if someone forgets to bump the version.
+
+There's no approval step built in, so anyone who can edit the file can change how claims are decided. Keep it under change
+control. Loosening a rule can fast-track claims that should reach a person.
+
+### What stays in code, and why
+
+**Safety rules** stay in code so that a one-line edit can't remove them:
+
+- A failed or refused Claude call goes to a person.
+- Injection flags and document concerns go to a person.
+- A second reading can't clear a warning.
+- The email body can't count as an invoice or police report.
+- Claude's policy tools are read-only.
+- A claimant who doesn't match the policyholder, or a sender who doesn't match the policy's email, goes to a person.
+
+**Check logic** stays in code too, such as comparing dates or merging readings across documents, although the file can currently
+switch off the date checks by removing `date_of_loss` from the required fields. Writing logic in YAML would
+mean inventing a small programming language with no type checking or debugger. If your team needs to change logic often, a
+dedicated rules engine would be the better step, and a trial on real claims would show whether that's worth building.
+
+**Prompts** stay in code because a small wording change can shift how Claude reads documents, and that needs the live eval.
 
 ## Design decisions
 
@@ -148,7 +209,7 @@ Sonnet 5.5 handles most of the work. Opus 5.5 steps in for complex cases, chosen
 | Step | Opus is used when |
 |---|---|
 | **Reading a document** | Sonnet's reading failed, it marked the document unreadable, or it was unsure of a field routing relies on. The document is then read again. |
-| **Coverage check** | The claim is at or above `CLAIMS_COMPLEX_AMOUNT` (default $2,000, a placeholder), or one of its documents was re-read |
+| **Coverage check** | The claim is at or above `complex_amount` in the rules file (default $2,000, a placeholder), or one of its documents was re-read |
 | **Coverage check, second try** | Sonnet's result was unsure and found no exclusion |
 
 A claim already going to a person skips Opus, except for re-reading unclear documents. A second reading can't remove a
@@ -196,12 +257,51 @@ handwriting or unusual document layouts. Regenerate them with `python scripts/ge
 - Build an eval set from real, reviewed claims and measure against it before turning on fast-track.
 - Run in shadow mode first, with every claim going to a person, and compare decisions.
 - Sample fast-tracked claims for review on an ongoing basis.
-- Set the limits in `.env.example` with your claims team. The defaults are placeholders.
+- Set the limits in `config/rules.yaml` with your claims team. The current values are placeholders.
 
-**Known limits**
+### Known limits
+
+**General**
 - A `request_info` decision ends the run, and the claimant's reply starts a new claim, so replies need linking to the original.
-- Claims with several invoices go to a person, because differing totals count as a conflict.
+- Claims with several invoices aren't handled reliably. Differing totals count as a conflict and go to a person, but
+  separate invoices with the same total can be counted as one and reach fast-track.
 - Forged documents that look consistent won't be caught. Fraud screening needs its own tooling.
+
+**Ways a claim can still be wrongly fast-tracked**
+
+Safety reviews found these, and they're still open. They were reproduced with scripted model readings, not on live Claude.
+
+- A pre-loss date on a second document that isn't labelled an invoice is dropped, so the invoice date check doesn't see it.
+- A second reading can change a document's type without raising a warning, which can remove that document's date.
+- A second invoice with no date, or a date Claude is unsure of, doesn't trigger the date checks.
+- An invoice dated in the future isn't flagged.
+- A claimed amount over the coverage limit can pass if it's within the 1% tolerance of the invoice.
+- A policy with an empty `line` uses the default rules, even when every listed line is stricter.
+- The coverage check sees extracted fields, not the documents, so an exclusion mentioned only in an attachment relies on Claude
+  raising a concern.
+
+**Ways an edit to the rules file can weaken a rule without an error**
+
+These pass `claims rules`.
+
+- Removing `date_of_loss` from `required_fields` turns off every date check.
+- A line's `requires` list replaces that loss type's default requirements instead of adding to them. For example,
+  `collision: {requires: [police_report]}` removes the no-injury requirement.
+- An empty `loss_types` under `defaults` removes all evidence rules.
+- `.nan` and `.inf` are accepted as numbers. A `.nan` confidence threshold turns off the confidence checks.
+- If a key appears twice, the last one wins with no error.
+- Some numbers don't mean what they appear to. `amount_tolerance: 1` means 100%, and YAML reads `030` as 24 and `1:30` as 90.
+- Thresholds and windows can be set low enough to turn a check off, such as `confidence_threshold: 0`, and `confidence_checked`
+  can be trimmed.
+
+**Other rules file behavior**
+
+- The old `CLAIMS_*` rule settings, such as `CLAIMS_FAST_TRACK_LIMIT`, are ignored with no warning. Move any you've set to the file.
+- A broken rules file also stops reviewers from deciding claims that are already waiting.
+- A running `claims watch` keeps the rules it started with, so restart it after an edit. A claim resumed after an edit can mix
+  results from both versions.
+- When someone holds policies on two lines and the claim gives no policy number, Claude's choice of policy also decides which
+  line's rules apply.
 
 ## Claude Code setup
 
@@ -225,6 +325,7 @@ the code are in [CLAUDE.md](CLAUDE.md). Create a `.venv`, or set `CLAIMS_PYTHON`
 | [src/claims/llm.py](src/claims/llm.py) | All calls to Claude |
 | [src/claims/prompts.py](src/claims/prompts.py) | Prompts |
 | [src/claims/routing.py](src/claims/routing.py), [coverage.py](src/claims/coverage.py), [consolidation.py](src/claims/consolidation.py) | The rules, with no model involved |
+| [config/rules.yaml](config/rules.yaml), [src/claims/rules.py](src/claims/rules.py) | The fast-track rules, and the code that loads and checks them |
 | [src/claims/audit.py](src/claims/audit.py) | The audit log |
 | [src/claims/claims_system.py](src/claims/claims_system.py), [policies.py](src/claims/policies.py) | Mock systems to replace |
 | [evals/cases/](evals/cases) | Synthetic claims |

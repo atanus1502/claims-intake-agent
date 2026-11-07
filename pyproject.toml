@@ -3,6 +3,7 @@ name = "claims-intake"
 version = "0.1.0"
 description = "LangGraph and Claude agent that reads claim emails and attachments, checks policy coverage, and routes simple claims to fast-track."
 readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.11"
 dependencies = [
     "anthropic>=2.6",

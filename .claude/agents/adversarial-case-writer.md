@@ -10,7 +10,7 @@ to find what it doesn't.
 
 ## Before writing
 
-Read `CLAUDE.md`, `scripts/generate_cases.py` and these files in `src/claims/`: `routing.py`, `coverage.py`,
+Read `CLAUDE.md`, `scripts/generate_cases.py`, `config/rules.yaml` and these files in `src/claims/`: `routing.py`, `coverage.py`,
 `consolidation.py`, `escalation.py`, `prompts.py`, `models.py`, `llm.py`, `graph.py` and `documents.py`. Look for specific
 gaps in the current code, and don't repeat what the `HR-` cases already cover. Check the latest `evals/results/` too, because
 it shows which wording scores low: a policy number alone in a subject line, or a loss type left to inference, can send a
