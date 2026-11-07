@@ -8,10 +8,10 @@ from typing import Any
 from claims.config import Settings
 from claims.models import reason
 
-RULES_VERSION = "rules-v3"
+RULES_VERSION = "rules-v4"
 REQUIRED_FIELDS = ("claimant_name", "date_of_loss", "loss_type", "loss_description")
 # Fields that must clear the confidence threshold when present. The amount is checked separately below.
-CONFIDENCE_CHECKED = (*REQUIRED_FIELDS, "policy_number", "police_report_number", "injury_reported", "third_party_involved")
+CONFIDENCE_CHECKED = (*REQUIRED_FIELDS, "policy_number", "police_report_number", "injury_reported", "third_party_involved", "invoice_date")
 NEEDS_POLICE_REPORT = {"theft", "vandalism"}
 NEEDS_EXPLICIT_NO_INJURY = {"collision"}
 
@@ -42,6 +42,8 @@ def decide(
     loss_type = fields.get("loss_type", {}).get("value")
     if "invoice" not in claim["doc_types"] or "invoice_total" not in fields:
         reasons.append(reason("no_invoice", "No readable invoice supports the amount."))
+    if "invoice" in claim["doc_types"] and "invoice_date" not in fields:
+        reasons.append(reason("missing_field", "The invoice has no readable date."))
     if loss_type in NEEDS_POLICE_REPORT and ("police_report" not in claim["doc_types"] or "police_report_number" not in fields):
         reasons.append(reason("no_police_report", f"A {loss_type} claim needs a police report."))
 
@@ -56,8 +58,10 @@ def decide(
         reasons.append(reason("missing_field", "No claim amount was found."))
     else:
         amount = Decimal(claim["amount"])
-        if amount > settings.fast_track_limit:
-            reasons.append(reason("over_fast_track_limit", f"{amount} is over the fast-track limit of {settings.fast_track_limit}."))
+        # The claimed amount counts too: the tolerance for rounding mustn't hide a claim over the limit.
+        claimed = Decimal(fields["amount_claimed"]["value"]) if "amount_claimed" in fields else amount
+        if max(amount, claimed) > settings.fast_track_limit:
+            reasons.append(reason("over_fast_track_limit", f"{max(amount, claimed)} is over the fast-track limit of {settings.fast_track_limit}."))
         if coverage.get("limit") is not None:
             payable = amount - Decimal(coverage["deductible"])
             if payable > Decimal(coverage["limit"]):
@@ -72,5 +76,7 @@ def decide(
             reasons.append(reason("loss_in_future", f"Date of loss {loss_date} is after the claim arrived."))
         elif (received - loss_date).days > settings.late_report_days:
             reasons.append(reason("late_report", f"Reported {(received - loss_date).days} days after the loss."))
+        if "invoice_date" in fields and date.fromisoformat(fields["invoice_date"]["value"]) < loss_date:
+            reasons.append(reason("invoice_before_loss", f"Invoice dated {fields['invoice_date']['value']} is before the loss on {loss_date}."))
 
     return {"route": HUMAN_REVIEW if reasons else FAST_TRACK, "reasons": reasons, "rules_version": RULES_VERSION}

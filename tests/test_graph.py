@@ -220,7 +220,7 @@ SONNET, OPUS = "claude-sonnet-5-5", "claude-opus-5-5"
 
 
 def unsure_invoice():
-    return invoice_extraction(fields=[field("claimant_name", "Maya Thornton"), field("invoice_total", "412.30", 0.6)])
+    return invoice_extraction(fields=[field("claimant_name", "Maya Thornton"), field("invoice_total", "412.30", 0.6), field("invoice_date", "2026-10-29")])
 
 
 def test_simple_claim_never_uses_opus(settings, tmp_path):
@@ -272,14 +272,14 @@ def test_high_value_claim_gets_opus_for_coverage(settings, tmp_path):
     llm = ScriptedLLM(extractions={"email": email_extraction(fields=[
         field("policy_number", "AUT-100234"), field("claimant_name", "Maya Thornton"), field("date_of_loss", "2026-10-28"),
         field("loss_type", "collision"), field("loss_description", "Hit a pole."), field("injury_reported", "false"), field("third_party_involved", "false"),
-    ]), "attachment-1": invoice_extraction(fields=[field("claimant_name", "Maya Thornton"), field("invoice_total", "2500")])})
+    ]), "attachment-1": invoice_extraction(fields=[field("claimant_name", "Maya Thornton"), field("invoice_total", "2500"), field("invoice_date", "2026-10-29")])})
     _, result = run(settings, tmp_path, llm=llm)
     assert llm.coverage_models == [OPUS]
     assert result["claim_status"] == status.FAST_TRACK
 
 
 def test_flagged_claim_skips_opus_for_coverage(settings, tmp_path):
-    llm = ScriptedLLM(extractions={"email": email_extraction(), "attachment-1": invoice_extraction(fields=[field("invoice_total", "9000")])})
+    llm = ScriptedLLM(extractions={"email": email_extraction(), "attachment-1": invoice_extraction(fields=[field("invoice_total", "9000"), field("invoice_date", "2026-10-29")])})
     run(settings, tmp_path, llm=llm)
     assert llm.coverage_models == [SONNET]
 

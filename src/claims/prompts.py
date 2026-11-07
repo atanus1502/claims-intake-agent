@@ -22,6 +22,8 @@ lower your confidence when you do.
 - amount_claimed: the amount the claimant says they are claiming, digits and decimal point only.
 - invoice_number and invoice_total: from an invoice or repair estimate. The total is the final amount \
 including tax, digits and decimal point only.
+- invoice_date: the date printed on an invoice or repair estimate, as YYYY-MM-DD. Only report this \
+from the invoice itself.
 - police_report_number: the police report or case reference.
 - injury_reported and third_party_involved: "true" or "false", only when the document says so outright. \
 Leave them out when it doesn't mention the subject.

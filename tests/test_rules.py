@@ -91,7 +91,7 @@ def test_documents_disagreeing_on_policy_number_is_a_conflict(settings, store):
 
 
 def test_invoice_total_below_threshold_confidence_blocks_fast_track(settings, store):
-    invoice = invoice_extraction(fields=[field("claimant_name", "Maya Thornton"), field("invoice_total", "412.30", 0.5)])
+    invoice = invoice_extraction(fields=[field("claimant_name", "Maya Thornton"), field("invoice_total", "412.30", 0.5), field("invoice_date", "2026-10-29")])
     route, codes = route_codes(settings, store, merged(invoice=invoice))
     assert route == "human_review" and "low_confidence" in codes
 
@@ -107,7 +107,7 @@ def test_unsure_claimed_amount_that_disagrees_with_the_invoice_goes_to_a_person(
 
 
 def test_unsure_claimed_amount_doesnt_rescue_an_unsure_invoice(settings, store):
-    invoice = invoice_extraction(fields=[field("claimant_name", "Maya Thornton"), field("invoice_total", "412.30", 0.5)])
+    invoice = invoice_extraction(fields=[field("claimant_name", "Maya Thornton"), field("invoice_total", "412.30", 0.5), field("invoice_date", "2026-10-29")])
     route, codes = route_codes(settings, store, merged(email=with_field("amount_claimed", "412.30", 0.99), invoice=invoice))
     assert route == "human_review" and "low_confidence" in codes
 
@@ -124,17 +124,17 @@ def test_threshold_is_inclusive(settings, store):
 
 
 def test_over_fast_track_limit(settings, store):
-    claim = merged(email=with_field("amount_claimed", "6000"), invoice=invoice_extraction(fields=[field("invoice_total", "6000")]))
+    claim = merged(email=with_field("amount_claimed", "6000"), invoice=invoice_extraction(fields=[field("invoice_total", "6000"), field("invoice_date", "2026-10-29")]))
     assert "over_fast_track_limit" in route_codes(settings, store, claim)[1]
 
 
 def test_over_coverage_limit(settings, store):
-    claim = merged(email=with_field("amount_claimed", "4500"), invoice=invoice_extraction(fields=[field("invoice_total", "4500")]))
+    claim = merged(email=with_field("amount_claimed", "4500"), invoice=invoice_extraction(fields=[field("invoice_total", "4500"), field("invoice_date", "2026-10-29")]))
     assert "over_coverage_limit" in route_codes(settings, store, claim)[1]
 
 
 def test_below_deductible(settings, store):
-    claim = merged(email=with_field("amount_claimed", "40"), invoice=invoice_extraction(fields=[field("invoice_total", "40")]))
+    claim = merged(email=with_field("amount_claimed", "40"), invoice=invoice_extraction(fields=[field("invoice_total", "40"), field("invoice_date", "2026-10-29")]))
     assert "below_deductible" in route_codes(settings, store, claim)[1]
 
 
@@ -150,7 +150,7 @@ def test_theft_with_a_police_report_can_fast_track(settings, store):
     report = {"doc_type": "police_report", "readable": True, "fields": [field("police_report_number", "SPD-1")], "concerns": [], "embedded_instructions": False}
     email = with_field("loss_type", "theft")
     email["fields"] = [f for f in email["fields"] if f["name"] != "amount_claimed"]
-    invoice = invoice_extraction(fields=[field("claimant_name", "Maya Thornton"), field("invoice_total", "1500")])
+    invoice = invoice_extraction(fields=[field("claimant_name", "Maya Thornton"), field("invoice_total", "1500"), field("invoice_date", "2026-10-29")])
     claim = merged(email=email, invoice=invoice, extra=[{"doc_id": "attachment-2", "result": report}])
     assert route_codes(settings, store, claim) == ("fast_track", set())
 
@@ -160,7 +160,7 @@ def test_collision_must_rule_out_injury_and_other_parties(settings, store):
     assert "injury_status_unknown" in route_codes(settings, store, merged(email=email))[1]
     email["fields"] = [f for f in email["fields"] if f["name"] != "amount_claimed"]
     email["fields"] += [field("injury_reported", "false"), field("third_party_involved", "false")]
-    invoice = invoice_extraction(fields=[field("claimant_name", "Maya Thornton"), field("invoice_total", "1500")])
+    invoice = invoice_extraction(fields=[field("claimant_name", "Maya Thornton"), field("invoice_total", "1500"), field("invoice_date", "2026-10-29")])
     assert route_codes(settings, store, merged(email=email, invoice=invoice)) == ("fast_track", set())
 
 
@@ -187,12 +187,12 @@ def test_small_rounding_is_not_a_conflict(settings, store):
 
 
 def test_amounts_are_normalised():
-    claim = consolidate([{"doc_id": "attachment-1", "result": invoice_extraction(fields=[field("invoice_total", "$1,850.00")])}])
+    claim = consolidate([{"doc_id": "attachment-1", "result": invoice_extraction(fields=[field("invoice_total", "$1,850.00"), field("invoice_date", "2026-10-29")])}])
     assert claim["amount"] == "1850.00"
 
 
 def test_nan_amount_is_invalid():
-    claim = consolidate([{"doc_id": "attachment-1", "result": invoice_extraction(fields=[field("invoice_total", "NaN")])}])
+    claim = consolidate([{"doc_id": "attachment-1", "result": invoice_extraction(fields=[field("invoice_total", "NaN"), field("invoice_date", "2026-10-29")])}])
     assert claim["amount"] is None and "invalid_value" in {i["code"] for i in claim["issues"]}
 
 
@@ -217,7 +217,7 @@ def _as(number, name):
 
 
 def _invoice(name):
-    return invoice_extraction(fields=[field("claimant_name", name), field("invoice_total", "412.30")])
+    return invoice_extraction(fields=[field("claimant_name", name), field("invoice_total", "412.30"), field("invoice_date", "2026-10-29")])
 
 
 def test_claimant_must_be_the_policyholder(settings, store):
@@ -362,6 +362,51 @@ def test_unsure_no_injury_on_a_collision_goes_to_a_person(settings, store):
     email = with_field("loss_type", "collision")
     email["fields"] = [f for f in email["fields"] if f["name"] != "amount_claimed"]
     email["fields"] += [field("injury_reported", "false", 0.5), field("third_party_involved", "false")]
-    invoice = invoice_extraction(fields=[field("claimant_name", "Maya Thornton"), field("invoice_total", "1500")])
+    invoice = invoice_extraction(fields=[field("claimant_name", "Maya Thornton"), field("invoice_total", "1500"), field("invoice_date", "2026-10-29")])
     route, codes = route_codes(settings, store, merged(email=email, invoice=invoice))
     assert route == "human_review" and codes == {"low_confidence"}
+
+
+def test_invoice_dated_before_the_loss_goes_to_a_person(settings, store):
+    invoice = invoice_extraction(fields=[field("claimant_name", "Maya Thornton"), field("invoice_total", "412.30"), field("invoice_date", "2026-10-19")])
+    route, codes = route_codes(settings, store, merged(invoice=invoice))
+    assert route == "human_review" and codes == {"invoice_before_loss"}
+
+
+def test_invoice_dated_on_the_day_of_the_loss_can_fast_track(settings, store):
+    invoice = invoice_extraction(fields=[field("claimant_name", "Maya Thornton"), field("invoice_total", "412.30"), field("invoice_date", "2026-10-28")])
+    assert route_codes(settings, store, merged(invoice=invoice)) == ("fast_track", set())
+
+
+def test_invoice_with_no_date_goes_to_a_person(settings, store):
+    invoice = invoice_extraction(fields=[field("claimant_name", "Maya Thornton"), field("invoice_total", "412.30")])
+    route, codes = route_codes(settings, store, merged(invoice=invoice))
+    assert route == "human_review" and codes == {"missing_field"}
+
+
+def test_email_cant_supply_the_invoice_date(settings, store):
+    email = email_extraction()
+    email["fields"].append(field("invoice_date", "2026-10-29"))
+    invoice = invoice_extraction(fields=[field("claimant_name", "Maya Thornton"), field("invoice_total", "412.30")])
+    claim = merged(email=email, invoice=invoice)
+    assert "invoice_date" not in claim["fields"]
+    assert "missing_field" in route_codes(settings, store, claim)[1]
+
+
+def test_unsure_invoice_date_blocks_fast_track(settings, store):
+    invoice = invoice_extraction(fields=[field("claimant_name", "Maya Thornton"), field("invoice_total", "412.30"), field("invoice_date", "2026-10-29", 0.5)])
+    route, codes = route_codes(settings, store, merged(invoice=invoice))
+    assert route == "human_review" and "low_confidence" in codes
+    assert "invoice_date" in second_reading_reason(invoice, settings.confidence_threshold)
+
+
+def test_claimed_amount_over_the_limit_goes_to_a_person_even_within_tolerance(settings, store):
+    invoice = invoice_extraction(fields=[field("invoice_total", "5000.00"), field("invoice_date", "2026-10-29")])
+    route, codes = route_codes(settings, store, merged(email=with_field("amount_claimed", "5049"), invoice=invoice))
+    assert route == "human_review" and "over_fast_track_limit" in codes and "amount_conflict" not in codes
+
+
+def test_claim_exactly_at_the_limit_is_not_over_it(settings, store):
+    invoice = invoice_extraction(fields=[field("invoice_total", "5000.00"), field("invoice_date", "2026-10-29")])
+    codes = route_codes(settings, store, merged(email=with_field("amount_claimed", "5000.00"), invoice=invoice))[1]
+    assert "over_fast_track_limit" not in codes

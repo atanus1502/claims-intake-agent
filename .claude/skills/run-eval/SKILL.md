@@ -7,7 +7,7 @@ disable-model-invocation: true
 Run the live eval and report what it shows. Arguments, if any, go to `claims-eval` (for example `--limit 3` or `--case FT-01-glass`).
 
 1. Run `pytest` first. If it fails, stop and report the failure, since the eval won't mean much.
-2. Tell the user the expected cost: about $0.03 per claim for the last measured run, so about $0.50 for all 17. If no
+2. Tell the user the expected cost: about $0.035 per claim for the last measured run, so about $0.80 for all 22. If no
    arguments were given and the code has changed since the last run, suggest `--limit 3` first.
 3. Run `claims-eval` with the arguments. Results are saved to `evals/results/<timestamp>/`.
 4. Report:

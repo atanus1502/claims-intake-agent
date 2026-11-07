@@ -25,6 +25,7 @@ class FieldName(str, Enum):
     amount_claimed = "amount_claimed"
     invoice_number = "invoice_number"
     invoice_total = "invoice_total"
+    invoice_date = "invoice_date"
     police_report_number = "police_report_number"
     injury_reported = "injury_reported"
     third_party_involved = "third_party_involved"

@@ -42,7 +42,7 @@ def invoice_extraction(**overrides: Any) -> dict[str, Any]:
     return {
         "doc_type": "invoice",
         "readable": True,
-        "fields": [field("claimant_name", "Maya Thornton"), field("invoice_number", "GL-55812"), field("invoice_total", "412.30")],
+        "fields": [field("claimant_name", "Maya Thornton"), field("invoice_number", "GL-55812"), field("invoice_total", "412.30"), field("invoice_date", "2026-10-29")],
         "concerns": [],
         "embedded_instructions": False,
         **overrides,

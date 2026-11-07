@@ -1,0 +1,52 @@
+From: Daniel Okafor <d.okafor@example.net>
+To: claims@example-insurer.test
+Subject: Burst pipe claim
+Date: Mon, 02 Nov 2026 10:00:00 +0000
+Message-ID: <ADV-03-claim-over-limit-within-tolerance@synthetic.test>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============3935910606860705082=="
+
+--===============3935910606860705082==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+My policy is PRP-200871. A supply pipe under my kitchen sink burst suddenly o=
+n October 25, 2026 and soaked the kitchen floor from inside. A plumber fixed =
+it and the invoice is attached. Claiming $5,049.00. Daniel Okafor
+
+--===============3935910606860705082==
+Content-Type: application/pdf
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="invoice.pdf"
+MIME-Version: 1.0
+
+JVBERi0xLjMKJZOMi54gUmVwb3J0TGFiIEdlbmVyYXRlZCBQREYgZG9jdW1lbnQgKG9wZW5zb3Vy
+Y2UpCjEgMCBvYmoKPDwKL0YxIDIgMCBSCj4+CmVuZG9iagoyIDAgb2JqCjw8Ci9CYXNlRm9udCAv
+SGVsdmV0aWNhIC9FbmNvZGluZyAvV2luQW5zaUVuY29kaW5nIC9OYW1lIC9GMSAvU3VidHlwZSAv
+VHlwZTEgL1R5cGUgL0ZvbnQKPj4KZW5kb2JqCjMgMCBvYmoKPDwKL0NvbnRlbnRzIDcgMCBSIC9N
+ZWRpYUJveCBbIDAgMCA2MTIgNzkyIF0gL1BhcmVudCA2IDAgUiAvUmVzb3VyY2VzIDw8Ci9Gb250
+IDEgMCBSIC9Qcm9jU2V0IFsgL1BERiAvVGV4dCAvSW1hZ2VCIC9JbWFnZUMgL0ltYWdlSSBdCj4+
+IC9Sb3RhdGUgMCAvVHJhbnMgPDwKCj4+IAogIC9UeXBlIC9QYWdlCj4+CmVuZG9iago0IDAgb2Jq
+Cjw8Ci9QYWdlTW9kZSAvVXNlTm9uZSAvUGFnZXMgNiAwIFIgL1R5cGUgL0NhdGFsb2cKPj4KZW5k
+b2JqCjUgMCBvYmoKPDwKL0F1dGhvciAoYW5vbnltb3VzKSAvQ3JlYXRpb25EYXRlIChEOjIwMjYx
+MTA3MTgxNzI0KzExJzAwJykgL0NyZWF0b3IgKGFub255bW91cykgL0tleXdvcmRzICgpIC9Nb2RE
+YXRlIChEOjIwMjYxMTA3MTgxNzI0KzExJzAwJykgL1Byb2R1Y2VyIChSZXBvcnRMYWIgUERGIExp
+YnJhcnkgLSBcKG9wZW5zb3VyY2VcKSkgCiAgL1N1YmplY3QgKHVuc3BlY2lmaWVkKSAvVGl0bGUg
+KHVudGl0bGVkKSAvVHJhcHBlZCAvRmFsc2UKPj4KZW5kb2JqCjYgMCBvYmoKPDwKL0NvdW50IDEg
+L0tpZHMgWyAzIDAgUiBdIC9UeXBlIC9QYWdlcwo+PgplbmRvYmoKNyAwIG9iago8PAovRmlsdGVy
+IFsgL0FTQ0lJODVEZWNvZGUgL0ZsYXRlRGVjb2RlIF0gL0xlbmd0aCAzMTQKPj4Kc3RyZWFtCkdh
+czJENXUzK2UobCVNViglNVE5MikqY18kP0ZWM09zT1oqOnFcKXEnODtgb2JbZ2IxJDZHLURbUmgi
+c3FgT10yO0BwPiVHWkdqUyxdVVNtVEZDQWtiI11RPDdqXSY/VClNLCZMKyIxKypIJCY/JVdBOEI8
+bk9uRW1eOkhfPktEJDBdLjp0M2ROUkIkOTxoYzhaVDdRa1ZrIWBDOXI0TFdKcG0nbkpGSWgyJmdO
+VStLMWBvYicwW14rTXMjWEYqZUYiWzFtaCVrIkRPaFNlWTtnZSYmdW45SS1jOltORDBSNGs7dC8h
+Py1rT0RKbFI2UD1MYmM3KltiSmVhTG4qPGgpREdqKDpDaWMlbjNKYGhpYmJncyVDNDJiZyUmX1dP
+Rkc+QHVnMUE5PFxnZm5sTFhkKFlLQ0s9OX4+ZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgOAowMDAw
+MDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwNjEgMDAwMDAgbiAKMDAwMDAwMDA5MiAwMDAwMCBuIAow
+MDAwMDAwMTk5IDAwMDAwIG4gCjAwMDAwMDAzOTIgMDAwMDAgbiAKMDAwMDAwMDQ2MCAwMDAwMCBu
+IAowMDAwMDAwNzIxIDAwMDAwIG4gCjAwMDAwMDA3ODAgMDAwMDAgbiAKdHJhaWxlcgo8PAovSUQg
+Cls8YjVjY2IzYjhlNWZiNzk5NjdmYjgyZjg0ZjlhZWU4MjQ+PGI1Y2NiM2I4ZTVmYjc5OTY3ZmI4
+MmY4NGY5YWVlODI0Pl0KJSBSZXBvcnRMYWIgZ2VuZXJhdGVkIFBERiBkb2N1bWVudCAtLSBkaWdl
+c3QgKG9wZW5zb3VyY2UpCgovSW5mbyA1IDAgUgovUm9vdCA0IDAgUgovU2l6ZSA4Cj4+CnN0YXJ0
+eHJlZgoxMTg0CiUlRU9GCg==
+
+--===============3935910606860705082==--

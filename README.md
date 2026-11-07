@@ -48,7 +48,7 @@ pip install -e ".[dev]"
 pytest
 ```
 
-The eval runs 17 synthetic claims through real Claude, which costs real API usage:
+The eval runs 22 synthetic claims through real Claude, which costs real API usage:
 
 ```bash
 export ANTHROPIC_API_KEY=your-key
@@ -62,8 +62,7 @@ Simple claims can move without waiting in a queue, and claims handlers can spend
 judgment. Every claim gets a first response as soon as it's processed.
 
 This repo ships only synthetic test data, so it can't show accuracy, fast-track rates or time saved on real claims. On
-the 17 test claims, a claim took about 9 seconds and $0.03 in API usage, with routing rules slightly older than the
-current ones. Real claims with longer documents will take longer and cost more. To measure your own results, use the
+the 22 test claims, a claim took about 12 seconds and $0.035 in API usage. Real claims with longer documents will take longer and cost more. To measure your own results, use the
 [eval](#checking-accuracy) with real, reviewed claims.
 
 **For claimants**
@@ -119,10 +118,10 @@ A claim is fast-tracked only when none of these apply. The rules are in [routing
 | **Extraction** | A required field is missing, or any required field is below the confidence threshold (default 0.85) |
 | **Documents** | A document is unreadable, unsupported or too large, documents disagree, or an attachment already appears on another claim |
 | **Manipulation** | A document contains text aimed at an automated system, or Claude notes a specific concern |
-| **Evidence** | There's no readable invoice, or a theft or vandalism claim has no police report document |
+| **Evidence** | There's no readable invoice, the invoice has no date or predates the loss, or a theft or vandalism claim has no police report document |
 | **Identity** | The claimant isn't the policyholder, or the email didn't come from the address on the policy |
 | **Coverage** | The policy is inactive, the date is outside its period, the loss type isn't covered, or an exclusion applies |
-| **Amount** | Over the fast-track limit (default $5,000), over the coverage limit, or not above the deductible |
+| **Amount** | The invoice or the claimed amount is over the fast-track limit (default $5,000), or the amount is over the coverage limit or not above the deductible |
 | **Risk** | Injury or another party is involved, a collision claim doesn't rule both out, the report is late, the policy is new, or there are many recent claims |
 | **Failure** | A Claude call fails or is refused, or the coverage check doesn't finish |
 
@@ -171,7 +170,7 @@ To stress-test the rules, the `adversarial-case-writer` agent in Claude Code add
 fast-tracked. Each one is otherwise clean, so a fast-track result means the attack got through, and `claims-eval` reports
 that as a failure. Check that each case is fair before trusting its result.
 
-The 17 synthetic cases are a starting point and can't show real-world accuracy. They don't test real damage photos,
+The 22 synthetic cases are a starting point and can't show real-world accuracy. They don't test real damage photos,
 handwriting or unusual document layouts. Regenerate them with `python scripts/generate_cases.py`.
 
 ## Before using it for real
@@ -203,6 +202,20 @@ handwriting or unusual document layouts. Regenerate them with `python scripts/ge
 - A `request_info` decision ends the run, and the claimant's reply starts a new claim, so replies need linking to the original.
 - Claims with several invoices go to a person, because differing totals count as a conflict.
 - Forged documents that look consistent won't be caught. Fraud screening needs its own tooling.
+
+## Claude Code setup
+
+The repo includes project files for working on it with [Claude Code](https://code.claude.com/docs). Rules for working on
+the code are in [CLAUDE.md](CLAUDE.md). Create a `.venv`, or set `CLAIMS_PYTHON`, so that the test hook can run.
+
+| Item | Type | What it does |
+|---|---|---|
+| [routing-safety-reviewer](.claude/agents/routing-safety-reviewer.md) | Agent | Checks a change for any new way a claim could be wrongly fast-tracked. It's read-only. |
+| [adversarial-case-writer](.claude/agents/adversarial-case-writer.md) | Agent | Writes synthetic `ADV-` claims designed to get wrongly fast-tracked. It never runs the live eval. |
+| [/run-eval](.claude/skills/run-eval/SKILL.md) | Skill | Runs the live eval and reports the results. Only you can start it, because it costs money. |
+| [add-eval-case](.claude/skills/add-eval-case/SKILL.md) | Skill | Adds a synthetic claim to the eval set. |
+| [run_tests.sh](.claude/hooks/run_tests.sh) | Hook | Runs the offline tests after each Python edit, with the API key removed. |
+| [settings.json](.claude/settings.json) | Settings | Lets tests and read-only git commands run without asking, and asks before `claims-eval` and `git push`. |
 
 ## Project layout
 

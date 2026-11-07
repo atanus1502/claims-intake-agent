@@ -27,7 +27,7 @@ def normalise_field(name: str, value: str) -> tuple[Any, str] | None:
     value = value.strip()
     if not value:
         return None
-    if name == "date_of_loss":
+    if name in ("date_of_loss", "invoice_date"):
         try:
             return date.fromisoformat(value), value
         except ValueError:
@@ -71,6 +71,8 @@ def consolidate(extractions: list[dict[str, Any]]) -> dict[str, Any]:
         for concern in result["concerns"]:
             issues.append(reason("document_concern", f"{doc_id}: {concern}"))
         for field in result["fields"]:
+            if field["name"] == "invoice_date" and doc_type != "invoice":
+                continue  # the claimant's own account can't supply the date that the invoice check relies on
             normalised = normalise_field(field["name"], field["value"])
             if normalised is None:
                 issues.append(reason("invalid_value", f"{doc_id}: {field['name']} has an unusable value."))
