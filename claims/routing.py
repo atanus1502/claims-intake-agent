@@ -8,8 +8,10 @@ from typing import Any
 from claims.config import Settings
 from claims.models import reason
 
-RULES_VERSION = "rules-v2"
+RULES_VERSION = "rules-v3"
 REQUIRED_FIELDS = ("claimant_name", "date_of_loss", "loss_type", "loss_description")
+# Fields that must clear the confidence threshold when present. The amount is checked separately below.
+CONFIDENCE_CHECKED = (*REQUIRED_FIELDS, "policy_number", "police_report_number", "injury_reported", "third_party_involved")
 NEEDS_POLICE_REPORT = {"theft", "vandalism"}
 NEEDS_EXPLICIT_NO_INJURY = {"collision"}
 
@@ -34,7 +36,7 @@ def decide(
     # flagged any claimed amount that disagrees with it, however confident either reading was.
     amount_source = "invoice_total" if "invoice_total" in fields else "amount_claimed"
     for name, field in fields.items():
-        if name in (*REQUIRED_FIELDS, "policy_number", amount_source) and field["confidence"] < settings.confidence_threshold:
+        if name in (*CONFIDENCE_CHECKED, amount_source) and field["confidence"] < settings.confidence_threshold:
             reasons.append(reason("low_confidence", f"{name} has confidence {field['confidence']:.2f}."))
 
     loss_type = fields.get("loss_type", {}).get("value")

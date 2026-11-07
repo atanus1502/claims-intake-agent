@@ -345,3 +345,23 @@ def test_merge_treats_equal_values_as_agreeing_but_flags_real_disagreement():
     assert merge_readings(with_field("loss_description", "Rock hit it."), email_extraction())["concerns"] == []
     concerns = merge_readings(with_field("amount_claimed", "185.00"), with_field("amount_claimed", "1850"))["concerns"]
     assert "amount_claimed" in concerns[0]
+
+
+@pytest.mark.parametrize(
+    "name, value",
+    [("injury_reported", "false"), ("third_party_involved", "false"), ("police_report_number", "SPD-1")],
+)
+def test_routing_fields_must_clear_the_threshold(settings, store, name, value):
+    route, codes = route_codes(settings, store, merged(email=with_field(name, value, 0.5)))
+    assert route == "human_review" and "low_confidence" in codes
+    assert route_codes(settings, store, merged(email=with_field(name, value, settings.confidence_threshold))) == ("fast_track", set())
+    assert name in second_reading_reason(with_field(name, value, 0.5), settings.confidence_threshold)
+
+
+def test_unsure_no_injury_on_a_collision_goes_to_a_person(settings, store):
+    email = with_field("loss_type", "collision")
+    email["fields"] = [f for f in email["fields"] if f["name"] != "amount_claimed"]
+    email["fields"] += [field("injury_reported", "false", 0.5), field("third_party_involved", "false")]
+    invoice = invoice_extraction(fields=[field("claimant_name", "Maya Thornton"), field("invoice_total", "1500")])
+    route, codes = route_codes(settings, store, merged(email=email, invoice=invoice))
+    assert route == "human_review" and codes == {"low_confidence"}

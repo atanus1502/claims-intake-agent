@@ -10,10 +10,10 @@ from typing import Any
 
 from claims.config import Settings
 from claims.consolidation import FREE_TEXT, normalise_field
-from claims.routing import REQUIRED_FIELDS
+from claims.routing import CONFIDENCE_CHECKED
 
 # The fields routing checks for confidence. A shaky amount_claimed doesn't count: routing relies on the invoice total.
-_DECISIVE_FIELDS = {*REQUIRED_FIELDS, "policy_number", "invoice_total"}
+_DECISIVE_FIELDS = {*CONFIDENCE_CHECKED, "invoice_total"}
 
 
 def second_reading_reason(reading: dict[str, Any], threshold: float) -> str | None:
