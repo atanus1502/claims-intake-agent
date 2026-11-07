@@ -23,8 +23,9 @@ from claims.llm import estimate_cost_usd
 from claims.routing import FAST_TRACK
 from claims.service import ClaimsAgent
 
-CASES_DIR = Path(__file__).resolve().parent.parent / "evals" / "cases"
-RESULTS_DIR = Path(__file__).resolve().parent.parent / "evals" / "results"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+CASES_DIR = PROJECT_ROOT / "evals" / "cases"
+RESULTS_DIR = PROJECT_ROOT / "evals" / "results"
 HIGH_CONFIDENCE = 0.9
 
 
@@ -121,7 +122,7 @@ def main() -> int:
     parser.add_argument("--workers", type=int, default=4)
     args = parser.parse_args()
 
-    settings = replace(Settings.from_env(), policy_file=CASES_DIR.parent.parent / "config" / "mock_policies.yaml")
+    settings = replace(Settings.from_env(), policy_file=PROJECT_ROOT / "config" / "mock_policies.yaml")
     case_dirs = sorted(p for p in CASES_DIR.iterdir() if (p / "expected.json").exists())
     if args.case:
         case_dirs = [p for p in case_dirs if p.name in args.case]

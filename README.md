@@ -111,8 +111,8 @@ new processing, create the file `data/CLAIMS_DISABLED`.
 
 ## When a claim goes to a person
 
-A claim is fast-tracked only when none of these apply. The rules are in [routing.py](claims/routing.py) and
-[coverage.py](claims/coverage.py).
+A claim is fast-tracked only when none of these apply. The rules are in [routing.py](src/claims/routing.py) and
+[coverage.py](src/claims/coverage.py).
 
 | Area | Sent to a person when |
 |---|---|
@@ -144,7 +144,7 @@ A claim is fast-tracked only when none of these apply. The rules are in [routing
 ## Which model handles what
 
 Sonnet 5.5 handles most of the work. Opus 5.5 steps in for complex cases, chosen by code in
-[escalation.py](claims/escalation.py):
+[escalation.py](src/claims/escalation.py):
 
 | Step | Opus is used when |
 |---|---|
@@ -204,10 +204,13 @@ handwriting or unusual document layouts. Regenerate them with `python scripts/ge
 
 | Path | Contents |
 |---|---|
-| [claims/graph.py](claims/graph.py) | The LangGraph workflow |
-| [claims/llm.py](claims/llm.py) | All calls to Claude |
-| [claims/prompts.py](claims/prompts.py) | Prompts |
-| [claims/routing.py](claims/routing.py), [coverage.py](claims/coverage.py), [consolidation.py](claims/consolidation.py) | The rules, with no model involved |
-| [claims/audit.py](claims/audit.py) | The audit log |
-| [claims/claims_system.py](claims/claims_system.py), [policies.py](claims/policies.py) | Mock systems to replace |
+| [src/claims/graph.py](src/claims/graph.py) | The LangGraph workflow |
+| [src/claims/llm.py](src/claims/llm.py) | All calls to Claude |
+| [src/claims/prompts.py](src/claims/prompts.py) | Prompts |
+| [src/claims/routing.py](src/claims/routing.py), [coverage.py](src/claims/coverage.py), [consolidation.py](src/claims/consolidation.py) | The rules, with no model involved |
+| [src/claims/audit.py](src/claims/audit.py) | The audit log |
+| [src/claims/claims_system.py](src/claims/claims_system.py), [policies.py](src/claims/policies.py) | Mock systems to replace |
 | [evals/cases/](evals/cases) | Synthetic claims |
+| [tests/](tests) | Offline tests, with Claude's answers scripted |
+| [CLAUDE.md](CLAUDE.md) | Instructions for Claude Code: commands, architecture and rules to keep |
+| [.claude/](.claude) | Claude Code settings, the test hook, skills and a reviewer agent |
