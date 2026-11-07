@@ -10,27 +10,33 @@ nothing written in a document can approve a claim.
 
 ```mermaid
 flowchart TD
-    start([Claim email]) --> intake
-    intake -. each document .-> extract_document
-    extract_document --> consolidate --> coverage_agent
-    coverage_agent -.-> coverage_tools -.-> coverage_agent
-    coverage_agent -.-> coverage_agent
-    coverage_tools -.-> verify_coverage
-    coverage_agent -.-> verify_coverage
-    verify_coverage --> route
-    route -. no reasons .-> fast_track([Fast-track])
-    route -. any reason .-> human_review --> apply_review --> reviewed([Decision recorded])
+    start(["Claim email (.eml)"]) --> intake["<b>intake</b><br/>Registers the claim, flags attachments<br/>already seen on another claim"]
+    intake -. "one per document, in parallel" .-> extract_document["<b>extract_document</b><br/>Reads the document, with a confidence score per field.<br/>Sonnet first, Opus re-reads if unsure"]
+    extract_document --> consolidate["<b>consolidate</b><br/>Merges the results, records every<br/>disagreement, picks the coverage model"]
+    consolidate --> coverage_agent["<b>coverage_agent</b><br/>Finds the policy and judges exclusions"]
+    coverage_agent -. "tool calls" .-> coverage_tools["<b>coverage_tools</b><br/>Read-only policy lookups"]
+    coverage_tools -. "tool results, or redo on Opus if unsure" .-> coverage_agent
+    coverage_agent -. "no tool call: one reminder" .-> coverage_agent
+    coverage_tools -. "assessment submitted" .-> verify_coverage["<b>verify_coverage</b><br/>Checks identity, status, dates, coverage<br/>and exclusions against the policy record"]
+    coverage_agent -. "call failed or turn limit" .-> verify_coverage
+    verify_coverage --> route["<b>route</b><br/>Applies the rules, queues the first response"]
+    route -. "no reason to involve a person" .-> fast_track(["Fast-track"])
+    route -. "any reason" .-> human_review["<b>human_review</b><br/>Pauses until a reviewer decides,<br/>even across restarts"]
+    human_review --> apply_review["<b>apply_review</b><br/>Records the decision"]
+    apply_review --> reviewed(["Approved, denied or info requested"])
 
     classDef claude fill:#ede9fe,stroke:#7c3aed,color:#1f1147
     classDef code fill:#e0f2fe,stroke:#0284c7,color:#082f49
     classDef person fill:#fef3c7,stroke:#d97706,color:#451a03
+    classDef terminal fill:#f1f5f9,stroke:#64748b,color:#0f172a
     class extract_document,coverage_agent claude
     class intake,consolidate,coverage_tools,verify_coverage,route,apply_review code
     class human_review person
+    class start,fast_track,reviewed terminal
 ```
 
 Purple steps call Claude, blue steps are plain code, and the amber step waits for a person. Dotted lines are
-conditional. Every step writes to a tamper-evident audit log. Print the graph as LangGraph compiles it with `claims graph`.
+conditional. Every step writes to a tamper-evident audit log.
 
 ## Quick start
 
