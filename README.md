@@ -56,6 +56,44 @@ claims-eval --limit 3    # start small and check the cost in the summary
 claims-eval
 ```
 
+## Benefits
+
+Simple claims can move without waiting in a queue, and claims handlers can spend their time on the ones that need
+judgment. Every claim gets a first response as soon as it's processed.
+
+This repo ships only synthetic test data, so it can't show accuracy, fast-track rates or time saved on real claims. On
+the 17 test claims, a claim took about 9 seconds and $0.03 in API usage, with routing rules slightly older than the
+current ones. Real claims with longer documents will take longer and cost more. To measure your own results, use the
+[eval](#checking-accuracy) with real, reviewed claims.
+
+**For claimants**
+
+- **A fast first response:** each claim gets an acknowledgement with its reference and next step, whichever route it takes.
+- **Quicker handling of simple claims:** a clean claim doesn't wait for a person to read it first.
+- **A person for anything uncertain:** injuries, other parties, exclusions and unclear documents all go to a claims handler.
+
+**For claims handlers**
+
+- **Less data entry:** details are extracted from emails, invoices and police reports into the claims system.
+- **Reviews that start with the reasons:** each claim arrives with why it needs a person and the coverage findings.
+- **Evidence you can check:** extracted values are recorded with the passage they came from and a confidence score.
+- **Problems surfaced early:** disagreements between documents, reused attachments and text aimed at automated systems are all flagged.
+
+**For compliance and risk**
+
+- **A full record of every claim:** document fingerprints, model readings, policy lookups, rule outcomes and reviewer decisions are all logged.
+- **Tampering is detectable:** `claims audit verify` shows whether the log has been edited or had records removed.
+- **Decisions you can explain:** routing comes from plain rules in code, so each outcome traces to named reasons and a rules version.
+- **Safe failure:** a failed or refused model call sends the claim to a person, never to fast-track.
+- **Resistance to manipulation:** nothing written in a document can approve a claim, and read-only tools mean Claude can't change a policy.
+
+**For operations**
+
+- **Cost that follows complexity:** Sonnet handles most of the work, and Opus is used only where a claim calls for it.
+- **Limits you control:** thresholds, a daily cap and a kill switch are all settings, with no code changes needed.
+- **No lost work:** a crash resumes from the last finished step, and a claim waiting for review survives restarts.
+- **Replaceable connections:** the claims system and policy store sit behind small interfaces, so real systems can replace the mocks.
+
 ## Using it
 
 ```bash
