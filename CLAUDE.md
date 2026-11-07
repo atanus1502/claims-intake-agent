@@ -39,6 +39,8 @@ These protect claimants and the insurer. Don't weaken one without the user's exp
 
 - **Routing rules:** bump `RULES_VERSION` in `routing.py`, and add a test for what must still go to a person. Use the
   `routing-safety-reviewer` agent before finishing.
+- **Widening the eval set:** the `adversarial-case-writer` agent adds claims designed to get wrongly fast-tracked. Its
+  `ADV-` cases are meant to expose gaps, so a failure is a finding to report rather than something to tune away.
 - **Prompts or models:** offline tests can't judge these. Say that the live eval is needed, and ask before running it.
 - **Eval results:** `wrongly_fast_tracked` must be zero. Results come from synthetic claims, so never present them as
   real-world accuracy, and say so if they predate the current rules.

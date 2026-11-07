@@ -167,6 +167,10 @@ It exits with an error if any claim is wrongly fast-tracked.
 | `reason_correct` | Whether it escalated for the right reason, not by luck |
 | `high_confidence_field_accuracy` | How far to trust high confidence scores |
 
+To stress-test the rules, the `adversarial-case-writer` agent in Claude Code adds `ADV-` claims designed to get wrongly
+fast-tracked. Each one is otherwise clean, so a fast-track result means the attack got through, and `claims-eval` reports
+that as a failure. Check that each case is fair before trusting its result.
+
 The 17 synthetic cases are a starting point and can't show real-world accuracy. They don't test real damage photos,
 handwriting or unusual document layouts. Regenerate them with `python scripts/generate_cases.py`.
 
@@ -213,4 +217,4 @@ handwriting or unusual document layouts. Regenerate them with `python scripts/ge
 | [evals/cases/](evals/cases) | Synthetic claims |
 | [tests/](tests) | Offline tests, with Claude's answers scripted |
 | [CLAUDE.md](CLAUDE.md) | Instructions for Claude Code: commands, architecture and rules to keep |
-| [.claude/](.claude) | Claude Code settings, the test hook, skills and a reviewer agent |
+| [.claude/](.claude) | Claude Code settings, the test hook, skills, and agents for safety review and adversarial cases |
