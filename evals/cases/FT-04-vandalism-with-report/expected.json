@@ -1,0 +1,11 @@
+{
+  "received_at": "2026-11-02T10:00:00+00:00",
+  "route": "fast_track",
+  "any_reason": [],
+  "fields": {
+    "policy_number": "AUT-100877",
+    "police_report_number": "APD-26-448213",
+    "loss_type": "vandalism",
+    "amount": "900.00"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "received_at": "2026-11-02T10:00:00+00:00",
+  "route": "human_review",
+  "any_reason": [
+    "injury_reported",
+    "third_party_involved"
+  ],
+  "fields": {
+    "policy_number": "AUT-100877",
+    "loss_type": "collision",
+    "injury_reported": "true"
+  }
+}

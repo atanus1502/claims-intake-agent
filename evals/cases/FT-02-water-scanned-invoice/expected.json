@@ -1,0 +1,11 @@
+{
+  "received_at": "2026-11-02T10:00:00+00:00",
+  "route": "fast_track",
+  "any_reason": [],
+  "fields": {
+    "policy_number": "PRP-200871",
+    "date_of_loss": "2026-10-25",
+    "loss_type": "water_damage",
+    "amount": "1850.00"
+  }
+}

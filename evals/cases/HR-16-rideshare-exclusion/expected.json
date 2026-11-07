@@ -1,0 +1,12 @@
+{
+  "received_at": "2026-11-02T10:00:00+00:00",
+  "route": "human_review",
+  "any_reason": [
+    "exclusion_applies"
+  ],
+  "fields": {
+    "policy_number": "AUT-100234",
+    "loss_type": "collision",
+    "amount": "1200.00"
+  }
+}

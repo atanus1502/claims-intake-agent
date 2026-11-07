@@ -1,0 +1,100 @@
+# Synthetic policies for testing. All people, addresses and numbers are made up.
+policies:
+  - policy_number: AUT-100234
+    line: auto
+    holder_name: Maya Thornton
+    contact_email: maya.thornton@example.com
+    postal_code: "98101"
+    status: active
+    inception: 2025-03-01
+    expiry: 2027-03-01
+    coverages:
+      glass: {limit: 2000, deductible: 50}
+      collision: {limit: 25000, deductible: 500}
+      vandalism: {limit: 10000, deductible: 250}
+      theft: {limit: 25000, deductible: 500}
+    exclusions:
+      - {id: AX-1, text: "Loss while the vehicle is used for paid delivery or rideshare."}
+      - {id: AX-2, text: "Loss while driven by a person not licensed to drive."}
+    prior_claims: []
+
+  - policy_number: PRP-200871
+    line: property
+    holder_name: Daniel Okafor
+    contact_email: d.okafor@example.net
+    postal_code: "60614"
+    status: active
+    inception: 2024-06-15
+    expiry: 2027-06-15
+    coverages:
+      water_damage: {limit: 15000, deductible: 500}
+      fire: {limit: 250000, deductible: 1000}
+      storm: {limit: 50000, deductible: 1000}
+      theft: {limit: 10000, deductible: 500}
+    exclusions:
+      - {id: PX-1, text: "Flood, meaning water entering the building from outside at ground level.", loss_types: [flood]}
+      - {id: PX-2, text: "Gradual seepage or leakage occurring over weeks or months."}
+    prior_claims:
+      - {date: 2026-02-10, type: storm, amount: 1200}
+
+  - policy_number: AUT-100877
+    line: auto
+    holder_name: Priya Raman
+    contact_email: priya.raman@example.org
+    postal_code: "30309"
+    status: active
+    inception: 2025-09-01
+    expiry: 2027-09-01
+    coverages:
+      glass: {limit: 2000, deductible: 0}
+      collision: {limit: 30000, deductible: 750}
+      theft: {limit: 30000, deductible: 750}
+      vandalism: {limit: 10000, deductible: 250}
+    exclusions:
+      - {id: AX-1, text: "Loss while the vehicle is used for paid delivery or rideshare."}
+    prior_claims: []
+
+  - policy_number: AUT-100411
+    line: auto
+    holder_name: Tomas Lindqvist
+    contact_email: tomas.lindqvist@example.com
+    postal_code: "80202"
+    status: lapsed
+    inception: 2024-01-10
+    expiry: 2026-01-10
+    coverages:
+      glass: {limit: 1500, deductible: 100}
+      collision: {limit: 20000, deductible: 1000}
+    exclusions: []
+    prior_claims: []
+
+  - policy_number: PRP-200345
+    line: property
+    holder_name: Grace Whitfield
+    contact_email: grace.whitfield@example.net
+    postal_code: "02139"
+    status: active
+    inception: 2023-11-20
+    expiry: 2026-11-20
+    coverages:
+      water_damage: {limit: 20000, deductible: 500}
+      fire: {limit: 300000, deductible: 1000}
+      storm: {limit: 40000, deductible: 750}
+    exclusions:
+      - {id: PX-1, text: "Flood, meaning water entering the building from outside at ground level.", loss_types: [flood]}
+      - {id: PX-2, text: "Gradual seepage or leakage occurring over weeks or months."}
+    prior_claims: []
+
+  - policy_number: AUT-100955
+    line: auto
+    holder_name: Samir Haddad
+    contact_email: samir.haddad@example.org
+    postal_code: "78701"
+    status: active
+    inception: 2026-10-20
+    expiry: 2027-10-20
+    coverages:
+      glass: {limit: 2000, deductible: 50}
+      collision: {limit: 20000, deductible: 500}
+    exclusions: []
+    prior_claims: []

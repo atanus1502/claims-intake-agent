@@ -1,0 +1,12 @@
+{
+  "received_at": "2026-11-02T10:00:00+00:00",
+  "route": "human_review",
+  "any_reason": [
+    "policy_not_active",
+    "outside_policy_period"
+  ],
+  "fields": {
+    "policy_number": "AUT-100411",
+    "date_of_loss": "2026-10-15"
+  }
+}

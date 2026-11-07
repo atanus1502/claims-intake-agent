@@ -1,0 +1,11 @@
+{
+  "received_at": "2026-11-02T10:00:00+00:00",
+  "route": "human_review",
+  "any_reason": [
+    "new_policy"
+  ],
+  "fields": {
+    "policy_number": "AUT-100955",
+    "amount": "420.00"
+  }
+}
